@@ -1,9 +1,6 @@
-import os
-import re
-import sys
-import configparser
-from subprocess import PIPE, run
-from linuxmusterLinuxclient7 import logging, constants, hooks, shares, config, user, templates, realm, fileHelper, printers
+import os, re, sys, configparser, subprocess, shutil
+from pathlib import Path
+from linuxmusterLinuxclient7 import logging, constants, hooks, shares, config, user, templates, realm, fileHelper, printers, computer
 
 def setup(domain=None, user=None):
     logging.info('#### linuxmuster-linuxclient7 setup ####')
@@ -38,7 +35,7 @@ def setup(domain=None, user=None):
 
     # Actually join domain!
     print()
-    logging.info("#### Joining domain {} ####".format(domain))
+    logging.info(f"#### Joining domain {domain} ####")
 
     if not realm.join(domain, user):
         return False
@@ -58,7 +55,7 @@ def setup(domain=None, user=None):
 
     print("\n\n")
 
-    logging.info("#### SUCCESSFULLY joined domain {} ####".format(domain))
+    logging.info(f"#### SUCCESSFULLY joined domain {domain} ####")
 
     return True
 
@@ -80,7 +77,7 @@ def status():
     print()
     logging.info("Joined domains:")
     for joinedDomain in joinedDomains:
-        logging.info("* {}".format(joinedDomain))
+        logging.info(f"* {joinedDomain}")
     print()
 
     if len(joinedDomains) > 0 and not realm.verifyDomainJoin():
@@ -144,7 +141,7 @@ def clean():
     logging.info('#### linuxmuster-linuxclient7 clean SUCCESSFULL ####')
 
 def isSetup():
-    return os.path.isfile(constants.networkConfigFilePath)
+    return os.path.isfile(constants.networkConfigFilePath) 
 
 # --------------------
 # - Helper functions -
@@ -153,13 +150,13 @@ def isSetup():
 def _cleanOldDomainJoins():
     # stop sssd
     logging.info("Stopping sssd")
-    if os.system("service sssd stop") != 0:
+    if subprocess.call(["service", "sssd", "stop"]) != 0:
         logging.error("Failed!")
         return False
 
     # Clean old domain join data
     logging.info("Deleting old kerberos tickets.")
-    os.system("kdestroy 2> /dev/null")
+    subprocess.call(["kdestroy"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     if not realm.leaveAll():
         return False
@@ -175,7 +172,7 @@ def _cleanOldDomainJoins():
         return False
 
     # remove network.conf
-    logging.info("Deleting {} if exists ...".format(constants.networkConfigFilePath))
+    logging.info(f"Deleting {constants.networkConfigFilePath} if exists ...")
     if not fileHelper.deleteFile(constants.networkConfigFilePath):
         return False
 
@@ -190,12 +187,12 @@ def _findDomain(domain=None):
     
     if domain == None:
         domain = availableDomains[0]
-        logging.info("Using first discovered domain {}".format(domain))
+        logging.info(f"Using first discovered domain {domain}")
     elif domain in availableDomains:
-        logging.info("Using domain {}".format(domain))
+        logging.info(f"Using domain {domain}")
     else:
         print("\n")
-        logging.error("Could not find domain {}!".format(domain))
+        logging.error(f"Could not find domain {domain}!")
         return False, None
     
     return True, domain
@@ -219,27 +216,27 @@ def _prepareNetworkConfiguration(domain):
 def _preparePam():
     # enable necessary pam modules
     logging.info('Updating pam configuration ... ')
-    os.system('pam-auth-update --package --enable libpam-mount pwquality sss --force')
+    subprocess.call(['pam-auth-update', '--package', '--enable', 'libpam-mount', 'pwquality', 'sss', '--force'])
     ## mkhomedir was injected in template not using pam-auth-update
-    os.system('pam-auth-update --package --remove krb5 mkhomedir --force')
+    subprocess.call(['pam-auth-update', '--package', '--remove', 'krb5', 'mkhomedir', '--force'])
 
     return True
 
 def _prepareServices():
     logging.info("Raloading systctl daemon")
-    os.system("systemctl daemon-reload")
+    subprocess.call(["systemctl", "daemon-reload"])
 
     logging.info('Enabling services:')
     services = ['linuxmuster-linuxclient7', 'smbd', 'nmbd', 'sssd']
     for service in services:
         logging.info('* %s' % service)
-        os.system('systemctl enable ' + service + '.service')
+        subprocess.call(['systemctl','enable', service + '.service'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     logging.info('Restarting services:')
     services = ['smbd', 'nmbd', 'systemd-timesyncd']
     for service in services:
         logging.info('* %s' % service)
-        os.system('systemctl restart ' + service + '.service')
+        subprocess.call(['systemctl', 'restart' , service + '.service'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     return True
 
@@ -247,18 +244,18 @@ def _installCaCertificate(domain, user):
     logging.info('Installing server ca certificate ... ')
 
     # try to mount the share
-    rc, sysvolMountpoint = shares.mountShare("//{}/sysvol".format(domain), shareName="sysvol", hiddenShare=True, username=user)
+    rc, sysvolMountpoint = shares.getLocalSysvolPath()
     if not rc:
         logging.error("Failed to mount sysvol!")
         return False
 
-    cacertPath = sysvolMountpoint + "/{}/tls/cacert.pem".format(domain)
-    cacertTargetPath = "/var/lib/samba/private/tls/{}.pem".format(domain)
+    cacertPath = f"{sysvolMountpoint}/{domain}/tls/cacert.pem"
+    cacertTargetPath = f"/var/lib/samba/private/tls/{domain}.pem"
 
     logging.info("Copying CA certificate from server to client!")
     try:
-        os.system('mkdir -p "$(dirname ' + cacertTargetPath + ')"')
-        os.system('cp ' + cacertPath + ' ' + cacertTargetPath)
+        Path(Path(cacertTargetPath).parent.absolute()).mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(cacertPath, cacertTargetPath)
     except Exception as e:
         logging.error("Failed!")
         logging.exception(e)
@@ -270,7 +267,7 @@ def _installCaCertificate(domain, user):
         return False
 
     # unmount sysvol
-    shares.unmountAllSharesOfUser(user)
+    shares.unmountAllSharesOfUser(computer.krbHostName())
 
     return True
 
@@ -282,17 +279,17 @@ def _adjustSssdConfiguration(domain):
 
     sssdConfig.read(sssdConfigFilePath)
     # accept usernames without domain
-    sssdConfig["domain/{}".format(domain)]["use_fully_qualified_names"] = "False"
+    sssdConfig[f"domain/{domain}"]["use_fully_qualified_names"] = "False"
 
     # override homedir
-    sssdConfig["domain/{}".format(domain)]["override_homedir"] = "/home/%u"
+    sssdConfig[f"domain/{domain}"]["override_homedir"] = "/home/%u"
 
     # Don't validate KVNO! Otherwise the Login will fail when the KVNO stored 
     # in /etc/krb5.keytab does not match the one in the AD (msDS-KeyVersionNumber)
-    sssdConfig["domain/{}".format(domain)]["krb5_validate"] = "False"
+    sssdConfig[f"domain/{domain}"]["krb5_validate"] = "False"
 
-    sssdConfig["domain/{}".format(domain)]["ad_gpo_access_control"] = "permissive"
-    sssdConfig["domain/{}".format(domain)]["ad_gpo_ignore_unreadable"] = "True"
+    sssdConfig[f"domain/{domain}"]["ad_gpo_access_control"] = "permissive"
+    sssdConfig[f"domain/{domain}"]["ad_gpo_ignore_unreadable"] = "True"
 
     try:
         logging.info("Writing new Configuration")
@@ -305,7 +302,7 @@ def _adjustSssdConfiguration(domain):
         return False
 
     logging.info("Restarting sssd")
-    if os.system("service sssd restart") != 0:
+    if subprocess.call(["service", "sssd", "restart"]) != 0:
         logging.error("Failed!")
         return False
 
@@ -317,14 +314,14 @@ def _deleteObsoleteFiles():
     logging.info("Deleting obsolete files")
 
     for obsoleteFile in constants.obsoleteFiles:
-        logging.info("* {}".format(obsoleteFile))
+        logging.info(f"* {obsoleteFile}")
         fileHelper.deleteFile(obsoleteFile)
 
     # directories
     logging.info("Deleting obsolete directories")
 
     for obsoleteDirectory in constants.obsoleteDirectories:
-        logging.info("* {}".format(obsoleteDirectory))
+        logging.info(f"* {obsoleteDirectory}")
         fileHelper.deleteDirectory(obsoleteDirectory)
 
     return True

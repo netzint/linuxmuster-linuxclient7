@@ -1,3 +1,11 @@
+linuxmuster-linuxclient7 (1.0.4-rc01) focal-testing; urgency=medium
+
+  - Fix security vulnerability with share mounting (#15)
+  - Some refactoring
+  - The Environment variable "SERVERHOME" is now exported and contains the mountpoint of the user home share
+
+ -- Dorian Zedler <dorian@itsblue.de>  Mon, 07 JUN 2021 16:02:00 +0200
+
 linuxmuster-linuxclient7 (1.0.3) focal; urgency=medium
 
   - More cleanup in prepare-image (#13, #11)

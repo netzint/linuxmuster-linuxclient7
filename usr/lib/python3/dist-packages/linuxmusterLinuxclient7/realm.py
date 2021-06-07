@@ -2,28 +2,19 @@ import os, sys, subprocess, configparser
 from linuxmusterLinuxclient7 import logging, computer
 
 def join(domain, user):
-    # get a kerberos ticket for user
-    print()
-    rc = os.system("kinit {}".format(user))
-    print()
-    if rc != 0:
-        logging.error("Failed! Did you enter the correct password and does the user exist?")
-        return False
-
-    logging.info("Successfully pulled kerberos ticket.")
-
     # join the domain using the kerberos ticket
-    logging.info("Now trying to join the Domain:")
-    joinCommand = 'realm join -v {} --no-password'.format(domain)
-    if os.system(joinCommand) != 0:
-        logging.error('Failed!')
+    joinCommand = ["realm", "join", "-v", domain, "-U", user]
+    if subprocess.call(joinCommand) != 0:
+        print()
+        logging.error('Failed! Did you enter the correct password?')
         return False
 
     logging.info("It looks like the domain was joined successfully.")
     return True
 
 def leave(domain):
-    return os.system("realm leave {}".format(domain)) == 0
+    leaveCommand = ["realm", "leave", domain]
+    return subprocess.call(leaveCommand) == 0
 
 def leaveAll():
     logging.info("Cleaning / leaving all domain joins")
@@ -49,7 +40,7 @@ def isJoined():
         return len(joinedDomains) > 0
 
 def pullKerberosTicketForComputerAccount():
-    return os.system("kinit -k {}$".format(computer.hostname().upper())) == 0
+    return subprocess.call(["kinit", "-k", computer.krbHostName()]) == 0
 
 def verifyDomainJoin():
     logging.info("Testing if the domain join actually works")
@@ -58,7 +49,7 @@ def verifyDomainJoin():
         return False
     
     logging.info("* Checking if the group \"domain users\" exists")
-    if os.system("getent group \"domain users\" > /dev/null") != 0:
+    if subprocess.call(["getent", "group", "domain users"], stdout=subprocess.PIPE, stderr=subprocess.PIPE) != 0:
         logging.error("The \"domain users\" group does not exists! Users wont be able to log in!")
         logging.error("This is sometimes related to /etc/nsswitch.conf.")
         return False
@@ -121,7 +112,7 @@ def getDomainConfig(domain):
 def clearUserCache():
     # clean sssd cache
     logging.info("Cleaning sssd cache.")
-    os.system("sssctl cache-remove --stop --start --override 2> /dev/null")
+    subprocess.call(["sssctl", "cache-remove", "--stop", "--start", "--override"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return True
 
 # --------------------
