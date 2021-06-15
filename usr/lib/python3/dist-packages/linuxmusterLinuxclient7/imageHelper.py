@@ -128,7 +128,7 @@ def _clearUserCache(unattended=False):
 
 def _unmountAllCifsMounts():
     logging.info("Unmounting all CIFS mounts!")
-    if subprocess.call("umount",  "-a", "-t", "cifs", "-l") != 0:
+    if subprocess.call(["umount",  "-a", "-t", "cifs", "-l"]) != 0:
         logging.info("Failed!")
         return False
 
@@ -198,6 +198,8 @@ def _clearLogs(unattended=False):
     
     if not fileHelper.deleteFile("/var/log/syslog"):
         return False
+
+    subprocess.call(["sudo", "service", "rsyslog", "restart"])
 
     return True
 
