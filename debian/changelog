@@ -1,3 +1,9 @@
+linuxmuster-linuxclient7 (1.0.4-1) focal; urgency=medium
+
+  - bump
+
+ -- Andreas Till <andreas.till@netzint.de>  Tue, 28  Sep  2021 11:41:00 +0200
+
 linuxmuster-linuxclient7 (1.0.4) focal; urgency=medium
 
   - Use rmdir instead of rmtree to remove share mountpoints
