@@ -1,0 +1,32 @@
+name: Build and publish documentation
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true  # Fetch Hugo themes (true OR recursive)
+          fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
+
+      - name: Setup Sphinx
+        run: |
+          sudo apt update
+          sudo apt install -y python3-pip python3-ldap build-essential
+          pip install sphinx_rtd_theme
+
+      - name: Build
+        run: |
+          make docs
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
