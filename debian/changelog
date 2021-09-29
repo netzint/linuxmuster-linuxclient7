@@ -1,3 +1,10 @@
+linuxmuster-linuxclient7 (1.0.6-1) focal; urgency=medium
+
+  - bump
+
+ -- Andreas Till <andreas.till@netzint.de>  Wed, 29  Sep  2021 08:46:00 +0200
+
+
 linuxmuster-linuxclient7 (1.0.6) focal; urgency=medium
 
   - Fix some issues when logging in with a falsely capitalized username (#29)
@@ -11,6 +18,12 @@ linuxmuster-linuxclient7 (1.0.5) focal; urgency=medium
   - Only mount drives with letters if useLetter is set to 1 in the GPO
 
  -- Dorian Zedler <dorian@itsblue.de>  Tue, 28 Sep 2021 16:19:15 +0200
+
+linuxmuster-linuxclient7 (1.0.4-1) focal; urgency=medium
+
+  - bump
+
+ -- Andreas Till <andreas.till@netzint.de>  Tue, 28  Sep  2021 11:41:00 +0200
 
 linuxmuster-linuxclient7 (1.0.4) focal; urgency=medium
 
