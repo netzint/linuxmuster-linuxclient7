@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>linuxmusterLinuxclient7.shares &mdash; linuxmuster-linuxclient7 1.0.4-1 documentation</title>
+  <title>linuxmusterLinuxclient7.shares &mdash; linuxmuster-linuxclient7 1.0.6-1 documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/theme_overrides.css" type="text/css" />
@@ -30,7 +30,7 @@
             <img src="../../_static/logo.png" class="logo" alt="Logo"/>
           </a>
               <div class="version">
-                1.0.4-1
+                1.0.6-1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -77,7 +77,7 @@
            <div itemprop="articleBody">
              
   <h1>Source code for linuxmusterLinuxclient7.shares</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">pwd</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">shutil</span><span class="o">,</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">subprocess</span>
+<span></span><span class="kn">import</span> <span class="nn">os</span><span class="o">,</span> <span class="nn">pwd</span><span class="o">,</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">shutil</span><span class="o">,</span> <span class="nn">re</span><span class="o">,</span> <span class="nn">subprocess</span><span class="o">,</span> <span class="nn">shutil</span>
 <span class="kn">from</span> <span class="nn">linuxmusterLinuxclient7</span> <span class="k">import</span> <span class="n">logging</span><span class="p">,</span> <span class="n">constants</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">computer</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
 
@@ -236,7 +236,7 @@
         <span class="n">gid</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Uid could not be found! Continuing anyway!&quot;</span><span class="p">)</span>
 
-    <span class="n">mountCommand</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;/usr/sbin/mount.cifs&quot;</span><span class="p">,</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">mountCommandOptions</span><span class="p">,</span> <span class="n">networkPath</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">]</span>
+    <span class="n">mountCommand</span> <span class="o">=</span> <span class="p">[</span><span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="s2">&quot;mount.cifs&quot;</span><span class="p">),</span> <span class="s2">&quot;-o&quot;</span><span class="p">,</span> <span class="n">mountCommandOptions</span><span class="p">,</span> <span class="n">networkPath</span><span class="p">,</span> <span class="n">mountpoint</span><span class="p">]</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot;Trying to mount &#39;</span><span class="si">{networkPath}</span><span class="s2">&#39; to &#39;</span><span class="si">{mountpoint}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;* Creating directory...&quot;</span><span class="p">)</span>
