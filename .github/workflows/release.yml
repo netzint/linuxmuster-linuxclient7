@@ -45,6 +45,22 @@ jobs:
       - name: Extract current changes
         run: cat *.changes | sed '0,/^Changes:$/d' | sed '/Checksums.*/Q' | sed '1,2d' | tail >> ./current-changes
 
+      - name: Define distribution variable
+        run: |
+          export DISTRIBUTION=$(grep -i ^Distribution *.changes | awk -F\: '{ print $2 }' | awk '{ print $1 }')
+          echo "DISTRIBUTION=$DISTRIBUTION" >> $GITHUB_ENV
+          
+          export VERSION=$(grep -i ^Version *.changes | awk -F\: '{ print $2 }' | awk '{ print $1 }')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          
+      - name: Test if it's a testing prerelease
+        id: check_prerelease
+        uses: haya14busa/action-cond@v1
+        with:
+          cond: ${{ env.DISTRIBUTION == 'lmn71' }}
+          if_true: "false"
+          if_false: "true"
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -52,9 +68,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          release_name: Release ${{ env.VERSION }} (${{ env.DISTRIBUTION }})
           draft: false
-          prerelease: false
+          prerelease: ${{ steps.check_prerelease.outputs.value }}
           body_path: ./current-changes
 
       - name: Delete current changes file
@@ -85,9 +101,9 @@ jobs:
       - name: Clone archive repo
         uses: actions/checkout@v2
         with: 
-          repository: "linuxmuster/archive"
+          repository: "linuxmuster/deb"
           ssh-key: ${{ secrets.REPO_SSH_KEY }}
-          path: "./archive"
+          path: "./deb"
           
       - name: Prepare download
         run: mkdir "package"
@@ -111,16 +127,16 @@ jobs:
           
       - name: Copy packages
         run: |
-          mkdir -p archive/packages/$PACKAGE/$DISTRIBUTION
-          rm -rf archive/packages/$PACKAGE/$DISTRIBUTION/*
+          mkdir -p deb/packages/$PACKAGE/$DISTRIBUTION
+          rm -rf deb/packages/$PACKAGE/$DISTRIBUTION/*
           
-          cp package/* archive/packages/$PACKAGE/$DISTRIBUTION
+          cp package/* deb/packages/$PACKAGE/$DISTRIBUTION
           
       - name: Push to repo
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          cd archive
+          cd deb
           git config user.name github-actions
           git config user.email github-actions@github.com
           git checkout -b update/$PACKAGE-$DISTRIBUTION-$VERSION

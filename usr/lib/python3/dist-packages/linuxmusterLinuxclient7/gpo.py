@@ -16,7 +16,7 @@ def processAllPolicies():
     """    
     rc, policyDnList = _findApplicablePolicies()
     if not rc:
-        logging.fatal("Error when loading applicable GPOs! Shares and printers will not work.")
+        logging.fatal("* Error when loading applicable GPOs! Shares and printers will not work.")
         return False
 
     for policyDn in policyDnList:
@@ -228,7 +228,7 @@ def _processDrivesPolicy(policyBasepath):
         if drive["useLetter"] == "1":
             shareName = f"{drive['label']} ({drive['letter']}:)"  
         else:
-             drive["label"]
+            shareName = drive["label"]
         shares.mountShare(drive["path"], shareName=shareName)
 
     logging.info("==> Successfully parsed a drive policy! ==")
