@@ -52,14 +52,6 @@ jobs:
           
           export VERSION=$(grep -i ^Version *.changes | awk -F\: '{ print $2 }' | awk '{ print $1 }')
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          
-      - name: Test if it's a testing prerelease
-        id: check_prerelease
-        uses: haya14busa/action-cond@v1
-        with:
-          cond: ${{ env.DISTRIBUTION == 'lmn71' }}
-          if_true: "false"
-          if_false: "true"
 
       - name: Create Release
         id: create_release
@@ -70,7 +62,6 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ env.VERSION }} (${{ env.DISTRIBUTION }})
           draft: false
-          prerelease: ${{ steps.check_prerelease.outputs.value }}
           body_path: ./current-changes
 
       - name: Delete current changes file
